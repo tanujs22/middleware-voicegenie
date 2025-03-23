@@ -2,10 +2,10 @@
 const AmiClient = require('asterisk-ami-client');
 
 const AMI_CONFIG = {
-  username: 'your_ami_username',
-  password: 'your_ami_password',
-  host: '127.0.0.1',
-  port: 5038,
+  username: process.env.AMI_USERNAME,
+  password: process.env.AMI_PASSWORD,
+  host: process.env.AMI_HOST,
+  port: process.env.AMI_PORT,
 };
 
 const ami = new AmiClient({ reconnect: true });
