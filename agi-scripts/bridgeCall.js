@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
 const axios = require('axios');
+
 const caller = process.argv[2];
 const called = process.argv[3];
 const callSid = `CALL_${Date.now()}`;
+
+console.log('🟡 Sending request to middleware...');
+console.log({ caller, called, callSid });
 
 (async () => {
   try {
@@ -12,10 +16,12 @@ const callSid = `CALL_${Date.now()}`;
       called,
       callSid
     });
+
+    console.log('✅ Got response from middleware');
     console.log(`SET VARIABLE SOCKET_URL "${res.data.socketURL}"`);
     process.exit(0);
   } catch (error) {
-    console.error('VERBOSE', `"Error: ${error.message}"`, 1);
+    console.error('❌ VERBOSE', `"Error: ${error.message}"`, 1);
     process.exit(1);
   }
 })();
