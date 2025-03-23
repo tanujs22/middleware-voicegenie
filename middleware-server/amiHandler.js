@@ -75,7 +75,7 @@ async function originateCall(from, to, callId) {
   };
 
   return new Promise((resolve, reject) => {
-    amiConnection.action(originateAction, (err, res) => {
+    ami.action(originateAction, (err, res) => {
       if (err) return reject(err);
       console.log('📞 Bot leg call originated via AMI');
       resolve(res);
