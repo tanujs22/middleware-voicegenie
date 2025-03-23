@@ -50,7 +50,7 @@ function connectToVG(socketURL, callDetails) {
   ws.on('message', (message) => {
     const data = JSON.parse(message);
     if (data.event === 'media' && data.media.payload) {
-      console.log('📩 VG message:', data);
+      console.log('📩 VG message:', data.event);
       const audioChunk = Buffer.from(data.media.payload, 'base64');
       sendAudioToAsterisk(audioChunk);
     }
