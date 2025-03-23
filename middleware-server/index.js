@@ -26,7 +26,7 @@ app.use(express.json());
 // Endpoint that AGI script calls to initiate the bridge and fetch VG socket URL
 app.post('/api/calls', async (req, res) => {
     const { caller, called, callSid } = req.body;
-  
+    console.log('📥 /api/calls hit');
     try {
       const vgResponse = await axios.post(
         VG_WEBHOOK_URL,
@@ -46,7 +46,7 @@ app.post('/api/calls', async (req, res) => {
           }
         }
       );
-  
+      console.log('✅ VG responded:', vgResponse.data);
       const { socketURL, HangupUrl, statusCallbackUrl } = vgResponse.data.data;
   
       // Optional: Start WebSocket connection immediately
