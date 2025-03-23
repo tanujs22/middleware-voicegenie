@@ -47,7 +47,7 @@ app.post('/api/calls', async (req, res) => {
         }
       );
       console.log('✅ VG responded:', vgResponse.data);
-      const { socketURL, HangupUrl, statusCallbackUrl } = vgResponse.data.data;
+      const { socketURL, HangupUrl, statusCallbackUrl, recordingStatusUrl } = vgResponse.data.data.data;
   
       // Optional: Start WebSocket connection immediately
       connectToVG(socketURL, {
@@ -61,7 +61,7 @@ app.post('/api/calls', async (req, res) => {
       // Respond back to AGI
       res.json({ socketURL });
     } catch (error) {
-      console.error('Error calling VG webhook:', error.message);
+      console.error('Error calling VG webhook:', error);
       res.status(500).json({ error: error.message });
     }
   });
