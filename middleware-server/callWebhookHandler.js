@@ -6,6 +6,12 @@ async function sendStatusCallback(statusCallbackUrl, callSid, status) {
     await axios.post(statusCallbackUrl, {
       CallSid: callSid,
       CallStatus: status
+    },
+    {
+      headers: {
+        'User-Agent': 'vicidial',
+        'Content-Type': 'application/json'
+      }
     });
     console.log(`Call status '${status}' sent successfully.`);
   } catch (err) {
@@ -17,7 +23,12 @@ async function sendStatusCallback(statusCallbackUrl, callSid, status) {
 // Hangup Callback webhook
 async function sendHangupCallback(hangupUrl, payload) {
   try {
-    await axios.post(hangupUrl, payload);
+    await axios.post(hangupUrl, payload,{
+      headers: {
+        'User-Agent': 'vicidial',
+        'Content-Type': 'application/json'
+      }
+    });
     console.log('Hangup event sent successfully.');
   } catch (err) {
     console.log(err)
