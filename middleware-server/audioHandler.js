@@ -24,6 +24,7 @@ function getAudioFromAsterisk(callback) {
   // Prevent multiple 'message' listeners
   if (asteriskSocket.listenerCount('message') === 0) {
     asteriskSocket.on('message', (audioChunk) => {
+      console.log('🎤 Received RTP audio chunk from Asterisk:', audioChunk.length, 'bytes');
       callback(audioChunk);
     });
   }
