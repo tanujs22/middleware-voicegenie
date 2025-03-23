@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  middleware-server:
+    build: .
+    container_name: vg-middleware-server
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
