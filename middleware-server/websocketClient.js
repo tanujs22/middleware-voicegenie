@@ -56,13 +56,11 @@ function connectToVG(socketURL, callDetails) {
     }
   });
 
-  ws.on('close', () => {
-    console.log('🔴 VG WebSocket closed.');
-
-    // Send final Call Status: completed
+  ws.on('close', (code, reason) => {
+    console.log(`🔴 VG WebSocket closed. Code: ${code}, Reason: ${reason}`);
+  
     sendStatusCallback(callDetails.statusCallbackUrl, callDetails.callSid, 'completed');
-
-    // Send Hangup callback explicitly
+  
     sendHangupCallback(callDetails.HangupUrl, {
       hangupCause: "NORMAL_CLEARING",
       disconnectedBy: callDetails.From,

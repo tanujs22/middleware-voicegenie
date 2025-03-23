@@ -4,20 +4,22 @@ const RTP_PORT = 40000;
 const asteriskSocket = dgram.createSocket('udp4');
 let isBound = false;
 
-let remoteRtpInfo = null; // 👈 To store where to send audio back
+let remoteRtpInfo = null;
+let bufferedAudio = []; // 👈 VG → Asterisk buffer before we learn IP
 
-// Send audio from VG → Asterisk RTP (dynamic target)
 function sendAudioToAsterisk(audioChunk) {
   if (remoteRtpInfo) {
+    // Send immediately if we know the destination
     asteriskSocket.send(audioChunk, remoteRtpInfo.port, remoteRtpInfo.address, (err) => {
       if (err) console.error('❌ RTP send error:', err);
     });
   } else {
-    console.warn('⚠️ No RTP target yet. Dropping audio chunk.');
+    // Buffer until we know where to send
+    console.warn('⚠️ No RTP target yet. Buffering audio chunk.');
+    bufferedAudio.push(audioChunk);
   }
 }
 
-// Receive audio from Asterisk RTP
 function getAudioFromAsterisk(callback) {
   if (!isBound) {
     asteriskSocket.bind(RTP_PORT, () => {
@@ -31,6 +33,14 @@ function getAudioFromAsterisk(callback) {
       if (!remoteRtpInfo) {
         remoteRtpInfo = rinfo;
         console.log(`📍 Learned RTP target from Asterisk: ${rinfo.address}:${rinfo.port}`);
+
+        // Flush buffered audio chunks
+        bufferedAudio.forEach(chunk => {
+          asteriskSocket.send(chunk, remoteRtpInfo.port, remoteRtpInfo.address, (err) => {
+            if (err) console.error('❌ RTP send error (flush):', err);
+          });
+        });
+        bufferedAudio = [];
       }
 
       console.log('🎤 Received RTP audio chunk from Asterisk:', audioChunk.length, 'bytes');
