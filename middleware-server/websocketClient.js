@@ -28,11 +28,12 @@ function connectToVG(socketURL, callDetails) {
       extra_headers: "{}"
     }));
 
+    let sequenceNumber = 1
     // Start streaming audio from Asterisk to VG
     getAudioFromAsterisk((audioChunk) => {
       const base64Audio = audioChunk.toString('base64');
       ws.send(JSON.stringify({
-        sequenceNumber: 1,
+        sequenceNumber: sequenceNumber++,
         event: 'media',
         media: {
           track: 'inbound',
