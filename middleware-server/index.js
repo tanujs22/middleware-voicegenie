@@ -28,6 +28,7 @@ app.post('/api/calls', async (req, res) => {
     const { caller, called, callSid } = req.body;
     console.log('📥 /api/calls hit');
     try {
+      // Step 1: Get VG WebSocket and webhook URLs
       const vgResponse = await axios.post(
         VG_WEBHOOK_URL,
         {
@@ -46,10 +47,13 @@ app.post('/api/calls', async (req, res) => {
           }
         }
       );
-      console.log('✅ VG responded:', vgResponse.data);
-      const { socketURL, HangupUrl, statusCallbackUrl, recordingStatusUrl } = vgResponse.data.data.data;
   
-      // Optional: Start WebSocket connection immediately
+      console.log('✅ VG responded:', vgResponse.data);
+  
+      const { socketURL, HangupUrl, statusCallbackUrl, recordingStatusUrl } =
+        vgResponse.data.data.data;
+  
+      // Step 2: Connect to VG WebSocket
       connectToVG(socketURL, {
         callSid,
         From: caller,
@@ -58,10 +62,14 @@ app.post('/api/calls', async (req, res) => {
         statusCallbackUrl
       });
   
-      // Respond back to AGI
+      // Step 3: Originate a new call to "bot leg"
+      // Example: Originate call from Asterisk to SIP/6002
+      await originateCall('local/5001@default', caller, callSid); // make sure this dialplan exists
+  
+      // Step 4: Respond back to AGI
       res.json({ socketURL });
     } catch (error) {
-      console.error('Error calling VG webhook:', error);
+      console.error('❌ Error in /api/calls:', error.message);
       res.status(500).json({ error: error.message });
     }
   });

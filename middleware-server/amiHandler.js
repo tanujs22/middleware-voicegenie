@@ -60,21 +60,28 @@ async function warmTransfer(callChannel, agentExtension) {
   });
 }
 
-// Originate Outbound Call via AMI
-async function originateCall(fromNumber, toNumber, callId) {
-    return ami.action({
-      Action: 'Originate',
-      Channel: `SIP/${fromNumber}`,
-      Exten: toNumber,
-      Context: 'default', // ensure context is correct
-      Priority: 1,
-      CallerID: fromNumber,
-      Async: true,
-      Variable: {
-        CALL_ID: callId
-      }
+async function originateCall(from, to, callId) {
+  const originateAction = {
+    Action: 'Originate',
+    Channel: from, // usually something like Local/5001@default
+    Context: 'default',
+    Exten: to,     // to whom the call is delivered
+    Priority: 1,
+    CallerID: to,
+    Variable: {
+      CALL_ID: callId
+    },
+    Async: true
+  };
+
+  return new Promise((resolve, reject) => {
+    amiConnection.action(originateAction, (err, res) => {
+      if (err) return reject(err);
+      console.log('📞 Bot leg call originated via AMI');
+      resolve(res);
     });
-  }
+  });
+}
 
 module.exports = {
   stopAudioPlayback,
