@@ -20,8 +20,9 @@ console.log({ caller, called, callSid });
     console.log('✅ Got response from middleware');
     process.stdout.write(`SET VARIABLE SOCKET_URL "${res.data.socketURL}"\n\n`);
     process.exit(0);
-  } catch (error) {
-    console.error('❌ VERBOSE', `"Error: ${error.message}"`, 1);
-    process.exit(1);
+  }  catch (error) {
+    console.error('❌ Middleware error:', error.message);
+    process.stdout.write(`SET VARIABLE SOCKET_URL ""\n\n`);
+    process.exit(0); // ✅ Don't break the dialplan
   }
 })();
