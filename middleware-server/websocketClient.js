@@ -31,6 +31,7 @@ function connectToVG(socketURL, callDetails) {
     let sequenceNumber = 1
     // Start streaming audio from Asterisk to VG
     getAudioFromAsterisk((audioChunk) => {
+      console.log('🎤 Received RTP audio chunk from Asterisk:', audioChunk.length, 'bytes');
       const base64Audio = audioChunk.toString('base64');
       console.log('📤 Sending audio to VG:', base64Audio.slice(0, 50) + '...');
       ws.send(JSON.stringify({
@@ -48,9 +49,10 @@ function connectToVG(socketURL, callDetails) {
   });
 
   ws.on('message', (message) => {
+    console.log('📩 Raw VG message:', message);
     const data = JSON.parse(message);
     if (data.event === 'media' && data.media.payload) {
-      console.log('📩 VG message:', data.event);
+      console.log('📩 VG media event received:', data);
       const audioChunk = Buffer.from(data.media.payload, 'base64');
       sendAudioToAsterisk(audioChunk);
     }
