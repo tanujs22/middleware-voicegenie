@@ -18,7 +18,7 @@ console.log({ caller, called, callSid });
     });
 
     console.log('✅ Got response from middleware');
-    process.stdout.write(`SET VARIABLE SOCKET_URL "${res.data.socketURL}"\n\n`);
+    process.stdout.write(`SET VARIABLE SOCKET_URL "${res.data.data.socketURL}"\n\n`);
     process.exit(0);
   }  catch (error) {
     console.error('❌ Middleware error:', error.message);
