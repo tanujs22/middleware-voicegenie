@@ -64,7 +64,7 @@ app.post('/api/calls', async (req, res) => {
   
       // Step 3: Originate a new call to "bot leg"
       // Example: Originate call from Asterisk to SIP/6002
-      await originateCall('local/5001@default', caller, callSid); // make sure this dialplan exists
+      await originateCall('Local/bot@bridge', caller, callSid); // make sure this dialplan exists
   
       // Step 4: Respond back to AGI
       res.json({ socketURL });

@@ -11,7 +11,7 @@ console.log({ caller, called, callSid });
 
 (async () => {
   try {
-    const res = await axios.post('http://localhost:3000/api/calls', {
+    const res = await axios.post('http://127.0.0.1:3000/api/calls', {
       caller,
       called,
       callSid

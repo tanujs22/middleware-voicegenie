@@ -60,14 +60,14 @@ async function warmTransfer(callChannel, agentExtension) {
   });
 }
 
-async function originateCall(from, to, callId) {
+async function originateCall(channel, caller, callId) {
   const originateAction = {
     Action: 'Originate',
-    Channel: from, // usually something like Local/5001@default
-    Context: 'default',
-    Exten: to,     // to whom the call is delivered
+    Channel: channel,       // e.g., "Local/bot@bridge"
+    Context: 'bridge',      // the dialplan context where "bot" is defined
+    Exten: 'bot',           // the extension in the [bridge] context
     Priority: 1,
-    CallerID: to,
+    CallerID: caller,
     Variable: {
       CALL_ID: callId
     },
