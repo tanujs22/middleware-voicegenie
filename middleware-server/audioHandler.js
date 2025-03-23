@@ -1,24 +1,32 @@
 const dgram = require('dgram');
 
-// Placeholder for RTP sockets setup
-const RTP_PORT = 40000; // Example RTP port (set correctly for real use)
-const asteriskSocket = dgram.createSocket('udp4');
+const RTP_PORT = 40000;
+const ASTERISK_IP = '127.0.0.1';
+const ASTERISK_PORT = RTP_PORT;
 
-// Sends audio from VG to Asterisk via RTP
+const asteriskSocket = dgram.createSocket('udp4');
+let isBound = false;
+
+// Send audio from VG → Asterisk RTP
 function sendAudioToAsterisk(audioChunk) {
-  // Replace with actual RTP destination (Asterisk IP and Port)
-  const ASTERISK_IP = '127.0.0.1';
-  const ASTERISK_PORT = RTP_PORT;
   asteriskSocket.send(audioChunk, ASTERISK_PORT, ASTERISK_IP);
 }
 
-// Receives audio from Asterisk RTP stream
+// Receive audio from Asterisk RTP
 function getAudioFromAsterisk(callback) {
-  asteriskSocket.bind(RTP_PORT);
+  if (!isBound) {
+    asteriskSocket.bind(RTP_PORT, () => {
+      isBound = true;
+      console.log(`🔊 RTP socket bound on port ${RTP_PORT}`);
+    });
+  }
 
-  asteriskSocket.on('message', (audioChunk) => {
-    callback(audioChunk);
-  });
+  // Prevent multiple 'message' listeners
+  if (asteriskSocket.listenerCount('message') === 0) {
+    asteriskSocket.on('message', (audioChunk) => {
+      callback(audioChunk);
+    });
+  }
 }
 
 module.exports = { sendAudioToAsterisk, getAudioFromAsterisk };
