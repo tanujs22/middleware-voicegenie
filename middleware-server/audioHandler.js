@@ -1,6 +1,6 @@
 const dgram = require('dgram');
 
-const RTP_PORT = 40000;
+const RTP_PORT = 50000;
 const asteriskSocket = dgram.createSocket('udp4');
 let isBound = false;
 
