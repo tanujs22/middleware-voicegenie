@@ -41,7 +41,7 @@ app.post('/api/calls', async (req, res) => {
         },
         {
           headers: {
-            Authorization: `Bearer ${VG_AUTH_TOKEN}`,
+            'User-Agent': 'vicidial',
             'Content-Type': 'application/json'
           }
         }
