@@ -17,12 +17,17 @@ console.log({ caller, called, callSid });
       callSid
     });
 
-    console.log('✅ Got response from middleware');
+    // Log the full response from middleware
+    console.log('✅ Got response from middleware: ', JSON.stringify(res.data, null, 2));
+    
+    // Alternatively, if you prefer a more detailed inspection:
+    // console.dir(res.data, { depth: null });
+
     process.stdout.write(`SET VARIABLE SOCKET_URL "${res.data.data.socketURL}"\n\n`);
     process.exit(0);
-  }  catch (error) {
+  } catch (error) {
     console.error('❌ Middleware error:', error.message);
     process.stdout.write(`SET VARIABLE SOCKET_URL ""\n\n`);
-    process.exit(0); // ✅ Don't break the dialplan
+    process.exit(0); // Don't break the dialplan
   }
 })();
