@@ -25,7 +25,8 @@ function getAudioFromAsterisk(callback) {
     asteriskSocket.bind(() => {
       isBound = true;
       localRtpPort = asteriskSocket.address().port;
-      console.log(`🔊 RTP socket dynamically bound on port ${localRtpPort}`);
+      const ip = asteriskSocket.address().address;
+      console.log(`🔊 RTP socket dynamically bound on ${ip}:${localRtpPort}`);
     });
   }
 
@@ -51,7 +52,10 @@ function getAudioFromAsterisk(callback) {
 }
 
 function getRtpPort() {
-  return localRtpPort;
+  return {
+    ip: asteriskSocket.address().address,
+    port: localRtpPort
+  };
 }
 
 module.exports = { sendAudioToAsterisk, getAudioFromAsterisk, getRtpPort };
