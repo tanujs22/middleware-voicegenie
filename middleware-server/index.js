@@ -88,7 +88,7 @@ app.post('/api/calls', async (req, res) => {
     
     // Extract response data
     const { socketURL, HangupUrl, statusCallbackUrl, recordingStatusUrl } = 
-      vgResponse.data.data;
+      vgResponse.data.data.data;
     
     console.log(`🔗 Socket URL: ${socketURL}`);
     console.log(`🔗 Hangup URL: ${HangupUrl}`);
