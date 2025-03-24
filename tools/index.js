@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const SIP_PORT = 15000;
 const sipServer = dgram.createSocket('udp4');
 
-const rtpPort = 15062; // consistent with your Asterisk audio port in SDP
+const rtpPort = 15000; // consistent with your Asterisk audio port in SDP
 const rtpSocket = dgram.createSocket('udp4');
 rtpSocket.on('message', (msg, rinfo) => {
     console.log(`🎧 Got RTP from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
