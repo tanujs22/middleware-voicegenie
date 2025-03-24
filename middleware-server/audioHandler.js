@@ -1,11 +1,11 @@
 const dgram = require('dgram');
 
-const RTP_PORT = 15000;
 const asteriskSocket = dgram.createSocket('udp4');
 let isBound = false;
 
 let remoteRtpInfo = null;
 let bufferedAudio = []; // 👈 VG → Asterisk buffer before we learn IP
+let localRtpPort = null;
 
 function sendAudioToAsterisk(audioChunk) {
   if (remoteRtpInfo) {
@@ -22,9 +22,10 @@ function sendAudioToAsterisk(audioChunk) {
 
 function getAudioFromAsterisk(callback) {
   if (!isBound) {
-    asteriskSocket.bind(RTP_PORT, () => {
+    asteriskSocket.bind(() => {
       isBound = true;
-      console.log(`🔊 RTP socket bound on port ${RTP_PORT}`);
+      localRtpPort = asteriskSocket.address().port;
+      console.log(`🔊 RTP socket dynamically bound on port ${localRtpPort}`);
     });
   }
 
@@ -49,4 +50,8 @@ function getAudioFromAsterisk(callback) {
   }
 }
 
-module.exports = { sendAudioToAsterisk, getAudioFromAsterisk };
+function getRtpPort() {
+  return localRtpPort;
+}
+
+module.exports = { sendAudioToAsterisk, getAudioFromAsterisk, getRtpPort };
