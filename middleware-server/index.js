@@ -23,50 +23,84 @@ const {
 app.use(express.json());
 
 
-// Endpoint that AGI script calls to initiate the bridge and fetch VG socket URL
+// in index.js
 app.post('/api/calls', async (req, res) => {
     const { caller, called, callSid } = req.body;
-
+    console.log('📥 /api/calls hit with:', { caller, called, callSid });
+    
     try {
-        // Create audio handler with unique port
-        const rtpHandler = require('./audioHandler').createRtpHandler(callSid);
-        const rtpPort = rtpHandler.rtpPort;
-
-        // Get VG socket URL as before...
-        const vgResponse = await axios.post(/* ... */);
-        const { socketURL, HangupUrl, statusCallbackUrl } = vgResponse.data.data;
-
-        // Store in call sessions map with all needed info
-        callSessions.set(callSid, {
-            rtpHandler,
-            socketURL,
-            rtpPort,
-            caller,
-            called,
-            // other call metadata
-        });
-
-        // Connect to VG with the rtpHandler (modified function)
-        connectToVG(socketURL, {
-            callSid,
-            From: caller,
-            To: called,
-            HangupUrl,
-            statusCallbackUrl
-        }, rtpHandler);
-
-        // Keep original response structure for compatibility
-        res.json({
-            status: vgResponse.data.status,
-            data: vgResponse.data.data,
-            message: vgResponse.data.message
-        });
-
+      // Create audio handler with unique port
+      console.log('🔊 Creating RTP handler for call:', callSid);
+      const rtpHandler = require('./audioHandler').createRtpHandler(callSid);
+      const rtpPort = rtpHandler.rtpPort;
+      console.log(`🔌 Allocated RTP port ${rtpPort} for call ${callSid}`);
+      
+      // Check if VG_WEBHOOK_URL is properly set
+      if (!VG_WEBHOOK_URL) {
+        console.error('❌ VG_WEBHOOK_URL is not defined in config!');
+        throw new Error('Missing Voicegenie webhook URL configuration');
+      }
+      console.log('🔗 Will call Voicegenie at:', VG_WEBHOOK_URL);
+      
+      // Step 1: Get VG WebSocket and webhook URLs
+      console.log('📤 Sending request to Voicegenie...');
+      const vgResponse = await axios.post(
+        VG_WEBHOOK_URL,
+        {
+          Caller: caller,
+          Called: called,
+          CallSid: callSid,
+          CallStatus: "ringing",
+          Direction: "inbound",
+          From: caller,
+          To: called
+        },
+        {
+          headers: {
+            'User-Agent': 'vicidial',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      console.log('✅ VG responded:', JSON.stringify(vgResponse.data, null, 2));
+      
+      const { socketURL, HangupUrl, statusCallbackUrl } = vgResponse.data.data;
+      
+      // Store in call sessions map
+      console.log('📝 Storing call session data');
+      callSessions.set(callSid, {
+        rtpHandler,
+        socketURL,
+        rtpPort,
+        caller,
+        called,
+        HangupUrl,
+        statusCallbackUrl
+      });
+      
+      // Connect to VG WebSocket
+      console.log('🔌 Connecting to VG WebSocket:', socketURL);
+      connectToVG(socketURL, {
+        callSid,
+        From: caller,
+        To: called,
+        HangupUrl,
+        statusCallbackUrl
+      }, rtpHandler);
+      
+      // Respond back to AGI
+      console.log('📤 Responding to AGI script');
+      res.json(vgResponse.data);
+      
     } catch (error) {
-        console.error('❌ Error in /api/calls:', error.message);
-        res.status(500).json({ error: error.message });
+      console.error('❌ Error in /api/calls:', error.message);
+      if (error.response) {
+        console.error('Response error data:', error.response.data);
+      }
+      res.status(500).json({ error: error.message });
     }
-});
+  });
 
 // Start Recording API
 app.post('/api/start-recording', async (req, res) => {
