@@ -32,8 +32,17 @@ server.on('message', (msg, rinfo) => {
 });
 
 server.bind(SIP_PORT, () => {
-  console.log(`🛰️ Fake SIP server listening on UDP ${SIP_PORT}`);
-});
-
-// 👇 This keeps Node.js alive (infinite loop without CPU usage)
-setInterval(() => {}, 1000);
+    console.log(`🛰️ Fake SIP server listening on UDP ${SIP_PORT}`);
+  });
+  
+  // 🎙️ Listen for RTP on the same port (40000)
+  const rtpSocket = dgram.createSocket('udp4');
+  rtpSocket.on('message', (msg, rinfo) => {
+    console.log(`🎧 Got RTP packet from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
+  });
+  rtpSocket.bind(SIP_PORT, () => {
+    console.log('🎙️ RTP socket also listening on 40000');
+  });
+  
+  // 👇 Keep Node.js alive
+  setInterval(() => {}, 1000);
