@@ -31,22 +31,31 @@ function createRtpHandler(callId) {
     console.log(`🔊 RTP socket for call ${callId} listening on port ${rtpPort}`);
   });
 
-  // Function to send audio to Asterisk
-  function sendAudioToAsterisk(audioChunk) {
-    if (remoteRtpInfo) {
-      console.log(`📤 Sending ${audioChunk.length} bytes to Asterisk at ${remoteRtpInfo.address}:${remoteRtpInfo.port}`);
-      socket.send(audioChunk, remoteRtpInfo.port, remoteRtpInfo.address, (err) => {
-        if (err) console.error(`❌ RTP send error for call ${callId}:`, err);
-      });
-    } else {
-      console.warn(`⚠️ No RTP target yet for call ${callId}. Buffering audio chunk (${bufferedAudio.length + 1} chunks).`);
-      bufferedAudio.push(audioChunk);
-      if (bufferedAudio.length > 100) {
-        console.warn(`⚠️ Buffer getting large (${bufferedAudio.length} chunks) for call ${callId}. Trimming.`);
-        bufferedAudio = bufferedAudio.slice(-50); // Keep only last 50 chunks
-      }
+// Function to send audio to Asterisk
+function sendAudioToAsterisk(audioChunk) {
+  // Always try to send to the return port (rtpPort+1)
+  const returnPort = rtpPort + 1;
+  console.log(`📤 Sending ${audioChunk.length} bytes to Asterisk return port 127.0.0.1:${returnPort}`);
+  socket.send(audioChunk, returnPort, '127.0.0.1', (err) => {
+    if (err) console.error(`❌ RTP send error to return port for call ${callId}:`, err);
+  });
+  
+  // If we have an established RTP target, also send there
+  if (remoteRtpInfo) {
+    console.log(`📤 Also sending to established RTP target ${remoteRtpInfo.address}:${remoteRtpInfo.port}`);
+    socket.send(audioChunk, remoteRtpInfo.port, remoteRtpInfo.address, (err) => {
+      if (err) console.error(`❌ RTP send error for call ${callId}:`, err);
+    });
+  } else {
+    // Still maintain the buffer for when we get an RTP target
+    console.warn(`⚠️ No established RTP target yet. Buffering audio chunk (${bufferedAudio.length + 1} chunks).`);
+    bufferedAudio.push(audioChunk);
+    if (bufferedAudio.length > 100) {
+      console.warn(`⚠️ Buffer getting large (${bufferedAudio.length} chunks). Trimming.`);
+      bufferedAudio = bufferedAudio.slice(-50); // Keep only last 50 chunks
     }
   }
+}
 
   // Function to get audio from Asterisk
   function getAudioFromAsterisk(callback) {
