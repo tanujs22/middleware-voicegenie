@@ -4,6 +4,15 @@ const crypto = require('crypto');
 const SIP_PORT = 15000;
 const sipServer = dgram.createSocket('udp4');
 
+const rtpPort = 15062; // consistent with your Asterisk audio port in SDP
+const rtpSocket = dgram.createSocket('udp4');
+rtpSocket.on('message', (msg, rinfo) => {
+    console.log(`🎧 Got RTP from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
+});
+rtpSocket.bind(rtpPort, () => {
+    console.log(`🎙️ RTP socket listening on ${rtpPort}`);
+});
+
 function parseHeadersAndSDP(msg) {
     const [headerPart, sdpPart] = msg.split('\r\n\r\n');
     const headers = {};
@@ -60,14 +69,6 @@ sipServer.on('message', (msg, rinfo) => {
         sipServer.send(Buffer.from(response), rinfo.port, rinfo.address, err => {
             if (err) console.error('❌ Failed to send SIP 200 OK:', err);
             else console.log(`✅ Sent SIP 200 OK with RTP port ${rtpPort} to ${rinfo.address}:${rinfo.port}`);
-        });
-
-        const rtpSocket = dgram.createSocket('udp4');
-        rtpSocket.on('message', (msg, rinfo) => {
-            console.log(`🎧 Got RTP from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
-        });
-        rtpSocket.bind(rtpPort, () => {
-            console.log(`🎙️ RTP socket listening on ${rtpPort}`);
         });
 
     } else if (message.startsWith('ACK')) {
