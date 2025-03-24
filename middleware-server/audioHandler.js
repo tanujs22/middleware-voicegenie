@@ -1,52 +1,52 @@
+// audioHandler.js
 const dgram = require('dgram');
+const portManager = require('./portManager');
 
-const RTP_PORT = 40000;
-const asteriskSocket = dgram.createSocket('udp4');
-let isBound = false;
+function createRtpHandler(callId) {
+  const rtpPort = portManager.allocatePort();
+  const socket = dgram.createSocket('udp4');
+  let remoteRtpInfo = null;
 
-let remoteRtpInfo = null;
-let bufferedAudio = []; // 👈 VG → Asterisk buffer before we learn IP
+  // Initialize socket
+  socket.on('error', (err) => {
+    console.error(`RTP Socket Error for call ${callId}:`, err);
+  });
 
-function sendAudioToAsterisk(audioChunk) {
-  if (remoteRtpInfo) {
-    // Send immediately if we know the destination
-    asteriskSocket.send(audioChunk, remoteRtpInfo.port, remoteRtpInfo.address, (err) => {
-      if (err) console.error('❌ RTP send error:', err);
-    });
-  } else {
-    // Buffer until we know where to send
-    console.warn('⚠️ No RTP target yet. Buffering audio chunk.');
-    bufferedAudio.push(audioChunk);
-  }
-}
+  socket.on('listening', () => {
+    console.log(`RTP socket for call ${callId} listening on port ${rtpPort}`);
+  });
 
-function getAudioFromAsterisk(callback) {
-  if (!isBound) {
-    asteriskSocket.bind(RTP_PORT, () => {
-      isBound = true;
-      console.log(`🔊 RTP socket bound on port ${RTP_PORT}`);
-    });
-  }
+  // Bind immediately
+  socket.bind(rtpPort, '0.0.0.0');
 
-  if (asteriskSocket.listenerCount('message') === 0) {
-    asteriskSocket.on('message', (audioChunk, rinfo) => {
-      if (!remoteRtpInfo) {
-        remoteRtpInfo = rinfo;
-        console.log(`📍 Learned RTP target from Asterisk: ${rinfo.address}:${rinfo.port}`);
+  return {
+    rtpPort,
 
-        // Flush buffered audio chunks
-        bufferedAudio.forEach(chunk => {
-          asteriskSocket.send(chunk, remoteRtpInfo.port, remoteRtpInfo.address, (err) => {
-            if (err) console.error('❌ RTP send error (flush):', err);
-          });
-        });
-        bufferedAudio = [];
+    // Send audio to Asterisk
+    sendAudioToAsterisk: (audioChunk) => {
+      if (remoteRtpInfo) {
+        socket.send(audioChunk, remoteRtpInfo.port, remoteRtpInfo.address);
       }
+    },
 
-      console.log('🎤 Received RTP audio chunk from Asterisk:', audioChunk.length, 'bytes');
-      callback(audioChunk);
-    });
-  }
+    // Get audio from Asterisk
+    getAudioFromAsterisk: (callback) => {
+      socket.on('message', (audioChunk, rinfo) => {
+        if (!remoteRtpInfo) {
+          remoteRtpInfo = rinfo;
+          console.log(`Learned RTP target for call ${callId}: ${rinfo.address}:${rinfo.port}`);
+        }
+        callback(audioChunk);
+      });
+    },
+
+    // Clean up resources
+    cleanup: () => {
+      socket.close();
+      portManager.releasePort(rtpPort);
+      console.log(`Released RTP port ${rtpPort} for call ${callId}`);
+    }
+  };
 }
 
-module.exports = { sendAudioToAsterisk, getAudioFromAsterisk };
+module.exports = { createRtpHandler };
