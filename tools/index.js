@@ -2,20 +2,23 @@ const dgram = require('dgram');
 const crypto = require('crypto');
 
 const SIP_PORT = 15000;
-const RTP_PORT = 15000;
-
 const sipServer = dgram.createSocket('udp4');
 
-function parseHeaders(msg) {
-    const lines = msg.split('\r\n');
+function parseHeadersAndSDP(msg) {
+    const [headerPart, sdpPart] = msg.split('\r\n\r\n');
     const headers = {};
-    lines.forEach(line => {
+    headerPart.split('\r\n').forEach(line => {
         const [key, ...rest] = line.split(':');
-        if (key && rest.length) {
-            headers[key.trim()] = rest.join(':').trim();
-        }
+        if (key && rest.length) headers[key.trim()] = rest.join(':').trim();
     });
-    return headers;
+
+    let rtpPort = 15000; // default fallback
+    if (sdpPart) {
+        const match = sdpPart.match(/m=audio (\d+)/);
+        if (match) rtpPort = parseInt(match[1]);
+    }
+
+    return { headers, rtpPort };
 }
 
 sipServer.on('message', (msg, rinfo) => {
@@ -23,13 +26,13 @@ sipServer.on('message', (msg, rinfo) => {
 
     if (message.startsWith('INVITE')) {
         console.log(`📩 Got SIP INVITE from ${rinfo.address}:${rinfo.port}`);
-        const headers = parseHeaders(message);
+
+        const { headers, rtpPort } = parseHeadersAndSDP(message);
         const callId = headers['Call-ID'] || crypto.randomUUID();
         const cseq = headers['CSeq'] || '1 INVITE';
         const via = headers['Via'];
         const to = headers['To'];
         const from = headers['From'];
-
         const tag = crypto.randomBytes(4).toString('hex');
 
         const response = [
@@ -48,15 +51,23 @@ sipServer.on('message', (msg, rinfo) => {
             's=Fake SIP',
             'c=IN IP4 127.0.0.1',
             't=0 0',
-            `m=audio ${RTP_PORT} RTP/AVP 0`,
+            `m=audio ${rtpPort} RTP/AVP 0`,
             'a=rtpmap:0 PCMU/8000',
             '',
             ''
         ].join('\r\n');
 
-        sipServer.send(Buffer.from(response), rinfo.port, rinfo.address, (err) => {
+        sipServer.send(Buffer.from(response), rinfo.port, rinfo.address, err => {
             if (err) console.error('❌ Failed to send SIP 200 OK:', err);
-            else console.log(`✅ Sent SIP 200 OK to ${rinfo.address}:${rinfo.port}`);
+            else console.log(`✅ Sent SIP 200 OK with RTP port ${rtpPort} to ${rinfo.address}:${rinfo.port}`);
+        });
+
+        const rtpSocket = dgram.createSocket('udp4');
+        rtpSocket.on('message', (msg, rinfo) => {
+            console.log(`🎧 Got RTP from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
+        });
+        rtpSocket.bind(rtpPort, () => {
+            console.log(`🎙️ RTP socket listening on ${rtpPort}`);
         });
 
     } else if (message.startsWith('ACK')) {
@@ -69,13 +80,3 @@ sipServer.on('message', (msg, rinfo) => {
 sipServer.bind(SIP_PORT, () => {
     console.log(`🛰️ Fake SIP server listening on UDP ${SIP_PORT}`);
 });
-
-const rtpSocket = dgram.createSocket('udp4');
-rtpSocket.on('message', (msg, rinfo) => {
-    console.log(`🎧 Got RTP packet from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
-});
-rtpSocket.bind(RTP_PORT, () => {
-    console.log(`🎙️ RTP socket also listening on ${RTP_PORT}`);
-});
-
-setInterval(() => {}, 1000);
