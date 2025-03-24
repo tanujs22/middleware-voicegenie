@@ -52,7 +52,7 @@ function connectToVG(socketURL, callDetails) {
     console.log('📩 Raw VG message:', message.toString());
     const data = JSON.parse(message);
     if (data.event === 'media' && data.media.payload) {
-      console.log('📩 VG media event received:', data);
+      console.log('📩 VG media event received:', data.event);
       const audioChunk = Buffer.from(data.media.payload, 'base64');
       sendAudioToAsterisk(audioChunk);
     }
