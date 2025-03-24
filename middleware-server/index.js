@@ -3,6 +3,8 @@ const axios = require('axios');
 require('dotenv').config();
 const app = express();
 
+const callSessions = new Map(); // Store active call sessions
+
 const {
     stopAudioPlayback,
     startCallRecording,
