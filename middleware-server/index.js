@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 require('dotenv').config();
+require('./sipRtpBridge');
 const app = express();
 
 const {
