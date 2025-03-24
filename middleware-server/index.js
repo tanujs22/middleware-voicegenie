@@ -67,7 +67,7 @@ app.post('/api/calls', async (req, res) => {
       
       console.log('✅ VG responded:', JSON.stringify(vgResponse.data, null, 2));
       
-      const { socketURL, HangupUrl, statusCallbackUrl } = vgResponse.data.data;
+      const { socketURL, HangupUrl, statusCallbackUrl } = vgResponse.data.data.data;
       
       // Store in call sessions map
       console.log('📝 Storing call session data');
