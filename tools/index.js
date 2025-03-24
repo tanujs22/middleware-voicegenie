@@ -25,7 +25,7 @@ server.on('message', (msg, rinfo) => {
             's=Fake SIP',
             'c=IN IP4 127.0.0.1',
             't=0 0',
-            'm=audio 40000 RTP/AVP 0',
+            'm=audio 15000 RTP/AVP 0',
             'a=rtpmap:0 PCMU/8000',
             '',
             ''
@@ -44,13 +44,13 @@ server.bind(SIP_PORT, () => {
     console.log(`🛰️ Fake SIP server listening on UDP ${SIP_PORT}`);
 });
 
-// 🎙️ Listen for RTP on the same port (40000)
+// 🎙️ Listen for RTP on the same port (15000)
 const rtpSocket = dgram.createSocket('udp4');
 rtpSocket.on('message', (msg, rinfo) => {
     console.log(`🎧 Got RTP packet from ${rinfo.address}:${rinfo.port} - size: ${msg.length} bytes`);
 });
 rtpSocket.bind(SIP_PORT, () => {
-    console.log('🎙️ RTP socket also listening on 40000');
+    console.log('🎙️ RTP socket also listening on 15000');
 });
 
 // 👇 Keep Node.js alive
