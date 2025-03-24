@@ -1,10 +1,21 @@
 // audioHandler.js
 const dgram = require('dgram');
-const portManager = require('./portManager'); // Use the dedicated port manager
+
+// Port management for concurrent calls
+const allocatedPorts = new Set();
 
 function createRtpHandler(callId) {
-  // Get port from the port manager
-  const rtpPort = portManager.allocatePort();
+  // Allocate a port from the available range
+  let rtpPort = 10000;
+  for (let port = 10000; port <= 19999; port += 2) {
+    if (!allocatedPorts.has(port)) {
+      rtpPort = port;
+      allocatedPorts.add(port);
+      console.log(`🔢 Allocated port ${port} (${allocatedPorts.size} ports in use)`);
+      break;
+    }
+  }
+  
   console.log(`⚡ Creating new RTP handler for call ${callId} on port ${rtpPort}`);
   
   const socket = dgram.createSocket('udp4');
@@ -12,7 +23,6 @@ function createRtpHandler(callId) {
   let isBound = false;
   let bufferedAudio = [];
   
-  // Socket error handling
   socket.on('error', (err) => {
     console.error(`❌ RTP Socket Error for call ${callId}:`, err);
   });
@@ -80,12 +90,19 @@ function createRtpHandler(callId) {
     socket.close(() => {
       console.log(`🔌 Socket closed for call ${callId}`);
     });
-    // Release the port back to the manager
-    portManager.releasePort(rtpPort);
-    console.log(`🔢 Released port ${rtpPort} back to pool`);
+    allocatedPorts.delete(rtpPort);
+    console.log(`🔢 Released port ${rtpPort} back to pool (${allocatedPorts.size} ports still in use)`);
   }
 
-  // Keep old functions for backward compatibility but make them use a singleton handler
+  return {
+    rtpPort,
+    sendAudioToAsterisk,
+    getAudioFromAsterisk,
+    cleanup
+  };
+}
+
+// Legacy functions for backward compatibility
 let defaultHandler = null;
 function getDefaultHandler() {
   if (!defaultHandler) {
@@ -95,7 +112,6 @@ function getDefaultHandler() {
   return defaultHandler;
 }
 
-// Legacy functions that use the default handler
 function sendAudioToAsterisk(audioChunk) {
   console.log('⚠️ Using legacy sendAudioToAsterisk function with default handler');
   return getDefaultHandler().sendAudioToAsterisk(audioChunk);
@@ -106,14 +122,9 @@ function getAudioFromAsterisk(callback) {
   return getDefaultHandler().getAudioFromAsterisk(callback);
 }
 
-  return {
-    rtpPort,
-    sendAudioToAsterisk,
-    getAudioFromAsterisk,
-    cleanup,
-    sendAudioToAsterisk,
-    getAudioFromAsterisk
-  };
-}
-
-// Rest of your code...
+// IMPORTANT: Export both the new function and the legacy functions
+module.exports = { 
+  createRtpHandler,
+  sendAudioToAsterisk,
+  getAudioFromAsterisk
+};
