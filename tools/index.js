@@ -34,3 +34,6 @@ server.on('message', (msg, rinfo) => {
 server.bind(SIP_PORT, () => {
   console.log(`🛰️ Fake SIP server listening on UDP ${SIP_PORT}`);
 });
+
+// 👇 This keeps Node.js alive (infinite loop without CPU usage)
+setInterval(() => {}, 1000);
