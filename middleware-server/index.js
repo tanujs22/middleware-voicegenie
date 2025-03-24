@@ -185,6 +185,17 @@ app.get('/api/call-port/:callSid', (req, res) => {
     }
 });
 
+// For debugging/monitoring purposes
+app.get('/api/system-status', (req, res) => {
+    res.json({
+      activeCalls: Array.from(callSessions.keys()),
+      callCount: callSessions.size,
+      uptime: process.uptime(),
+      memoryUsage: process.memoryUsage(),
+      timestamp: new Date().toISOString()
+    });
+  });
+
 app.listen(MIDDLEWARE_SERVER_PORT, () => {
     console.log(`Middleware server running on port ${MIDDLEWARE_SERVER_PORT}`);
 });
